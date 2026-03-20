@@ -8,50 +8,50 @@ Live demo: https://osm-id-tagging.netlify.app/
 
 ## Project Overview
 
-The **OSM iD Tagging Schema Visualizer** is a standalone web application designed for active OpenStreetMap contributors and developers. It provides a real-time, interactive exploration of the [openstreetmap/id-tagging-schema](https://github.com/openstreetmap/id-tagging-schema). 
+The **OSM iD Tagging Schema Visualizer** is a standalone web application designed for OpenStreetMap contributors and developers. It provides an interactive exploration of the [openstreetmap/id-tagging-schema](https://github.com/openstreetmap/id-tagging-schema). 
 
-Rather than just listing JSON files, this tool implements the strict, complex **business logic of the iD editor engine**. It accurately replicates graph inheritance, preset group unwrapping, defaults prioritization, and regional tag variants, giving developers a crystal-clear understanding of exactly *how* and *why* a specific field is presented to the mapper.
+Rather than just listing JSON files, this tool implements a custom field resolution system inspired by the **iD editor logic**. It explores graph inheritance, preset group unwrapping, defaults prioritization, and regional tag variants, helping developers understand how fields are resolved and combined within the schema.
 
 
 ## Key Features
 
-- **iD Engine Perfect Parity:** Implements the exact field resolution pipeline used by the iD editor. Correctly unrolls preset `{groups}` and calculates strict inheritance priority.
-- **Smart Defaults & Inheritance:** Visually distinguishes the true origin of every field. The UI automatically generates badges like `[from geometry (area)]` or `[from tag (highway=footway)]`, preventing "magic" field appearances.
-- **Deep Internationalization (i18n):** Dynamically fetches localization JSONs from the main schema repo. Not only translates presets and categories, but recursively parses internal references (e.g. `{crossing/markings}`).
-- **Regional Variants Grouping:** Groups regional and country-specific variants (`*-BG`, `-DE-AT-CH`) under a single logical field, neatly organizing the UI with quick-access expandable sub-panels.
-- **Live Native Fetching:** Pulls source-of-truth metadata straight from the `dist/` schema repository in real-time. No local building required.
-- **Responsive & Themed:** Clean layout with CSS Grid/Flexbox and automatic Dark Mode detection (`prefers-color-scheme: dark`).
+- **Field Resolution Pipeline:** Implements a structured field resolution system inspired by the iD editor. Unrolls preset `{groups}` and processes inheritance priority across multiple sources.
+- **Smart Defaults & Inheritance:** Visually distinguishes the origin of each field. The UI generates badges such as `[from geometry (area)]` or `[from tag (highway=footway)]` to make field sources explicit.
+- **Deep Internationalization (i18n):** Dynamically fetches localization JSONs from the main schema repository. Supports nested references (e.g. `{crossing/markings}`) and fallback resolution.
+- **Regional Variants Grouping:** Groups regional and country-specific variants (`*-BG`, `-DE-AT-CH`) under a unified field representation with expandable UI sections.
+- **Live Native Fetching:** Loads schema data directly from the `dist/` repository without requiring a local build step.
+- **Responsive & Themed:** Clean layout using CSS Grid/Flexbox with automatic Dark Mode support (`prefers-color-scheme: dark`).
 
 ## Tech Stack
 
-This tool is built to be fast, lightweight, and framework-agnostic. It embraces modern web standards without heavy node_module dependencies:
+This tool is built to be lightweight and framework-agnostic, relying on modern web standards:
 
-- **Vanilla JavaScript (ES2022+)** – Engineered using strict **ES Modules** for high maintainability and encapsulation.
-- **HTML5 & Vanilla CSS3** – Utilizing CSS variables, Grid, and Flexbox for native blazing-fast rendering.
-- **Fetch API & Promises** – Asynchronous, parallel background loading of vast JSON ecosystems.
+- **Vanilla JavaScript (ES2022+)** – Organized using ES Modules for modularity and maintainability  
+- **HTML5 & CSS3** – Using CSS variables, Grid, and Flexbox  
+- **Fetch API & Promises** – Parallel asynchronous loading of schema data  
 
 ## Project Architecture
 
-The codebase cleanly separates State, Logic, and UI, ensuring highly testable and extensible components:
+The codebase separates state, logic, and UI components:
 
 ```text
-├── index.html                   # Main entry point and structural layout
-├── style.css                    # UI tokens, Dark mode, and layouts
-├── app.js                       # Bootstrapper and module orchestrator
+├── index.html                   # Main entry point and layout
+├── style.css                    # UI styles, themes, and layout system
+├── app.js                       # Application bootstrap and orchestration
 └── src/
     ├── data/
-    │   └── api.js               # Network fetching and global appData state holding
+    │   └── api.js               # Data fetching and global state
     ├── i18n/
-    │   └── translate.js         # Reactive localization, missing keys fallback, and nested string parsing
+    │   └── translate.js         # Localization and translation resolution
     ├── logic/
-    │   └── fieldsResolver.js    # Core iD engine business logic (deduplication, hierarchies, geometry defaults)
+    │   └── fieldsResolver.js    # Field resolution logic (inheritance, deduplication, defaults)
     ├── ui/
-    │   ├── categories.js        # Left-panel logic (Category tree and selection)
-    │   ├── presets.js           # Center-panel logic (Search, string splitting, and preset lists)
-    │   ├── details.js           # Right-panel logic (Preset layout and property binding)
-    │   └── fields.js            # Extracted UI builder handling field variants and translation wrappers
+    │   ├── categories.js        # Category tree UI
+    │   ├── presets.js           # Preset list and search
+    │   ├── details.js           # Preset details panel
+    │   └── fields.js            # Field rendering and variants UI
     └── utils/
-        └── icons.js             # SVG fallback generation and Maki/Temaki CDN resolution
+        └── icons.js             # Icon resolution and fallbacks
 ```
 
 ## How to Run
@@ -79,8 +79,9 @@ Because the project leverages modern **ES Modules** (`<script type="module">`), 
 
 ## GSoC Alignment
 
-This project perfectly aligns with OpenStreetMap development principles:
-1. **Tooling & Data Accessibility:** Drastically lowers the barrier of entry for developers trying to understand OSM Tagging mapping definitions.
-2. **Open Source Scalability:** ES Module refactoring allows community members to easily add new schema tests, UI extensions, or standalone logic exports.
-3. **Data-Driven Transparency:** Exposes "hidden" routing metrics (like field source priority) natively to the core UI layout. 
+This project aligns with OpenStreetMap development goals:
+
+1)Tooling & Accessibility: Helps developers and contributors better understand the tagging schema structure
+2)Lower Barrier to Contribution: Makes complex schema relationships more approachable and easier to debug
+3)Exploration & Transparency: Provides visibility into how fields are resolved across geometry, tags, and presets
 
