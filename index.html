@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OSM iD Tagging Schema Visualizer</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <header class="app-header">
+        <h1>OSM iD Tagging Schema</h1>
+        <div style="flex-grow: 1;"></div>
+        <select id="lang-select" class="lang-select" aria-label="Select language">
+            <option value="en">English</option>
+            <option value="ru">Русский</option>
+            <option value="de">Deutsch</option>
+            <option value="fr">Français</option>
+            <option value="es">Español</option>
+            <option value="it">Italiano</option>
+            <option value="zh-CN">中文 (简体)</option>
+            <option value="ja">日本語</option>
+            <option value="nl">Nederlands</option>
+            <option value="pl">Polski</option>
+        </select>
+        <div id="loading" class="loading">Loading schema data...</div>
+    </header>
+
+    <main class="app-container" id="app">
+        <!-- GLOBAL SEARCH BAR -->
+        <div class="search-box">
+            <div class="search-input-wrapper">
+                <input type="text" id="preset-filter" placeholder="Filter presets..." disabled autocomplete="off">
+                <button id="clear-search" class="clear-btn" aria-label="Clear search" style="display: none;">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- LEFT SIDEBAR -->
+        <aside class="sidebar">
+            <div class="panel-header">Categories</div>
+            <ul id="category-tree" class="item-list sidebar-list"></ul>
+        </aside>
+
+        <!-- CENTER -->
+        <section class="center-panel">
+            <div class="panel-header" id="center-header">Presets</div>
+            <ul id="preset-list" class="item-list center-list">
+                <li class="empty-state">Select a category</li>
+            </ul>
+            <div class="panel-footer" id="center-footer" style="display: none;">
+                <button id="toggle-all-presets" class="btn-secondary">Show all presets</button>
+            </div>
+        </section>
+
+        <!-- RIGHT PANEL -->
+        <section class="right-panel">
+            <div class="panel-header" id="right-header">Preset Details</div>
+            <div id="preset-details" class="preset-details">
+                <div class="empty-state">Select a preset to view details</div>
+            </div>
+        </section>
+    </main>
+    <script type="module" src="app.js"></script>
+</body>
+
+</html>
