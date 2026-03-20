@@ -81,7 +81,7 @@ Because the project leverages modern **ES Modules** (`<script type="module">`), 
 
 This project aligns with OpenStreetMap development goals:
 
-1)Tooling & Accessibility: Helps developers and contributors better understand the tagging schema structure
-2)Lower Barrier to Contribution: Makes complex schema relationships more approachable and easier to debug
-3)Exploration & Transparency: Provides visibility into how fields are resolved across geometry, tags, and presets
+1)Tooling & Accessibility: Helps developers and contributors better understand the tagging schema structure```
+2)Lower Barrier to Contribution: Makes complex schema relationships more approachable and easier to debug```
+3)Exploration & Transparency: Provides visibility into how fields are resolved across geometry, tags, and presets```
 
