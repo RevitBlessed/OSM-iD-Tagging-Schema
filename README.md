@@ -54,7 +54,7 @@ The codebase cleanly separates State, Logic, and UI, ensuring highly testable an
         └── icons.js             # SVG fallback generation and Maki/Temaki CDN resolution
 ```
 
-## 🛠 How to Run
+## How to Run
 
 Because the project leverages modern **ES Modules** (`<script type="module">`), modern browsers require the files to be served over HTTP/HTTPS to prevent CORS policy restrictions.
 
@@ -77,7 +77,7 @@ Because the project leverages modern **ES Modules** (`<script type="module">`), 
 3. **Open the browser:**
    Navigate to `http://localhost:3000` (or the port provided by your server).
 
-## 🗺 GSoC Alignment
+## GSoC Alignment
 
 This project perfectly aligns with OpenStreetMap development principles:
 1. **Tooling & Data Accessibility:** Drastically lowers the barrier of entry for developers trying to understand OSM Tagging mapping definitions.
