@@ -3,6 +3,7 @@ import { appData } from '../data/api.js';
 export const SOURCE_PRESET = 'preset';
 export const SOURCE_TAG = 'tag';
 export const SOURCE_GEOMETRY = 'geometry';
+export const SOURCE_GROUP = 'group';
 
 export function getDefaultFieldRefs(preset) {
     const result = {
@@ -13,115 +14,162 @@ export function getDefaultFieldRefs(preset) {
     const geometries = preset.geometry || [];
 
     geometries.forEach(g => {
-        // GET BASE FIELDS directly from the geometry preset "point" / "area"
-        // (in data.defaults[g] there is normally an array [..., "point"], it doesn't have a .fields property)
-        const geomPreset = appData.presets[g];
-        if (geomPreset) {
-            if (geomPreset.fields) result.geometry.push({ refs: geomPreset.fields, sourceType: SOURCE_GEOMETRY, sourceLabel: `geometry (${g})`, isMain: true });
-            if (geomPreset.moreFields) result.geometry.push({ refs: geomPreset.moreFields, sourceType: SOURCE_GEOMETRY, sourceLabel: `geometry (${g})`, isMain: false });
-        }
+        const defaultsList = appData.defaults[g] || [];
 
-        const defs = appData.defaults[g];
-        if (!defs) return;
+        defaultsList.forEach(presetId => {
+            const p = appData.presets[presetId];
+            if (!p) return;
 
-        // tag-specific defaults
-        if (preset.tags) {
-            for (const [k, v] of Object.entries(preset.tags)) {
-                const tagKey = `${k}=${v}`;
-                const tagDefs = defs[tagKey];
-
-                if (tagDefs) {
-                    if (tagDefs.fields) result.tag.push({ refs: tagDefs.fields, sourceType: SOURCE_TAG, sourceLabel: `tag (${tagKey})`, isMain: true });
-                    if (tagDefs.moreFields) result.tag.push({ refs: tagDefs.moreFields, sourceType: SOURCE_TAG, sourceLabel: `tag (${tagKey})`, isMain: false });
+            if (p.tags) {
+                let match = true;
+                for (const [k, v] of Object.entries(p.tags)) {
+                    if (!preset.tags || !preset.tags[k]) {
+                        match = false;
+                        break;
+                    }
+                    if (v !== '*' && preset.tags[k] !== v) {
+                        match = false;
+                        break;
+                    }
                 }
+                if (!match) return;
             }
-        }
+
+            // Map sourceLabel directly to the base geometry type (e.g. "area" or "line") per user feedback
+            if (p.fields) result.geometry.push({ refs: p.fields, sourceType: SOURCE_GEOMETRY, sourceLabel: `geometry (${g})`, isMain: true });
+            if (p.moreFields) result.geometry.push({ refs: p.moreFields, sourceType: SOURCE_GEOMETRY, sourceLabel: `geometry (${g})`, isMain: false });
+        });
     });
 
     return result;
 }
 
 export function collectFieldRefs(preset) {
-    const visitedGroups = new Set();
-    const addedFields = new Map();
+    const fieldMap = new Map();
+    const visitedGroups = new Map();
 
-    const main = [];
-    const additional = [];
+    // The correct origin resolution relies on attributing fields to their DEEPEST generic abstraction.
+    // If geometry defined 'name', and preset also lists 'name', geometry is the TRUE origin.
+    // Therefore, local preset has the LOWEST priority in claiming authorship.
+    const PRIORITY = {
+        [SOURCE_GROUP]: 4,
+        [SOURCE_GEOMETRY]: 3,
+        [SOURCE_TAG]: 2,
+        [SOURCE_PRESET]: 1
+    };
 
-    function resolveRefs(refs, targetArray, sourceType = SOURCE_PRESET, sourceLabel = SOURCE_PRESET) {
+    function processRefs(refs, sourceType, sourceLabel, isMain) {
+        if (!refs) return;
+
         refs.forEach(ref => {
-            // --- GROUP ---
+            // --- GROUP RESOLUTION ---
             if (ref.startsWith('{') && ref.endsWith('}')) {
                 const groupId = ref.slice(1, -1);
+                const displayGroupId = groupId.startsWith('@') ? groupId.substring(1) : groupId;
 
-                if (visitedGroups.has(groupId)) return;
-                visitedGroups.add(groupId);
+                // ANY resolution of {} is treated as a Group source level
+                const nextSourceType = SOURCE_GROUP;
+                const nextSourceLabel = `group (${displayGroupId})`;
 
-                const groupPreset = appData.presets[groupId];
+                // Only skip if we already visited this group with a HIGHER OR EQUAL priority source!
+                // (This fixes the bug where Geometry visited {@templates/contact} and caused the Preset to silently drop it!)
+                const currentVisitPriority = PRIORITY[nextSourceType];
+                const highestPreviousPriority = visitedGroups.get(groupId) || 0;
+                
+                if (currentVisitPriority <= highestPreviousPriority) {
+                    return; // Skip: already visited symmetrically or by a higher priority
+                }
+                visitedGroups.set(groupId, currentVisitPriority);
 
+                // Fallback robust group lookup
+                const groupPreset = appData.presets[groupId] || appData.presets[displayGroupId] || appData.presets[`@${groupId}`];
+                
                 if (groupPreset) {
-                    resolveRefs(groupPreset.fields || [], targetArray, sourceType, sourceLabel);
-                    resolveRefs(groupPreset.moreFields || [], targetArray, sourceType, sourceLabel);
+                    processRefs(groupPreset.fields, nextSourceType, nextSourceLabel, isMain);
+                    processRefs(groupPreset.moreFields, nextSourceType, nextSourceLabel, false); // always treat moreFields as additional
                 }
                 return;
             }
 
-            // Handle field references and merge regional variants
+            // --- STANDARD FIELD ---
             const fData = appData.fields[ref];
-            // Deduplication and grouping of regional fields with a common key
+            // Normalize variants down to their base key to manage overrides cleanly
             const dedupKey = (fData && fData.key) ? fData.key : ref;
 
-            if (addedFields.has(dedupKey)) {
-                const existingGroup = addedFields.get(dedupKey);
-                if (!existingGroup.refs.includes(ref)) {
-                    existingGroup.refs.push(ref);
+            if (fieldMap.has(dedupKey)) {
+                const existing = fieldMap.get(dedupKey);
+                
+                if (!existing.refs.includes(ref)) {
+                    existing.refs.push(ref);
                 }
 
-                // IMPORTANT: if originalSourceType is missing for some reason — restore it
-                if (!existingGroup.originalSourceType) {
-                    existingGroup.originalSourceType = sourceType;
-                    existingGroup.originalSourceLabel = sourceLabel;
+                // Strictly apply priority replacement rules:
+                if (PRIORITY[sourceType] > PRIORITY[existing.sourceType]) {
+                    existing.sourceType = sourceType;
+                    existing.sourceLabel = sourceLabel;
+                    if (isMain) existing.isMain = true;
+                } else if (PRIORITY[sourceType] === PRIORITY[existing.sourceType]) {
+                    if (isMain) existing.isMain = true;
                 }
-
-                // Update source by priority: preset > tag > geometry
-                // BUT never overwrite the original source (originalSource)
-                if (sourceType === SOURCE_PRESET) {
-                    existingGroup.sourceType = SOURCE_PRESET;
-                } else if (sourceType === SOURCE_TAG && existingGroup.sourceType === SOURCE_GEOMETRY) {
-                    existingGroup.sourceType = SOURCE_TAG;
-                }
-
-                return;
+            } else {
+                fieldMap.set(dedupKey, {
+                    id: dedupKey,
+                    refs: [ref],
+                    sourceType: sourceType,
+                    sourceLabel: sourceLabel,
+                    isMain: isMain
+                });
             }
-
-            const fieldGroup = {
-                id: dedupKey,
-                refs: [ref],
-                sourceType: sourceType,
-                sourceLabel: sourceLabel,
-                originalSourceType: sourceType,
-                originalSourceLabel: sourceLabel
-            };
-            addedFields.set(dedupKey, fieldGroup);
-            targetArray.push(fieldGroup);
         });
     }
 
+    // --- STEP 1: ADD GEOMETRY DEFAULTS ---
     const defaults = getDefaultFieldRefs(preset);
-
-    // defaults: geometry
     defaults.geometry.forEach(def => {
-        resolveRefs(def.refs, def.isMain ? main : additional, def.sourceType, def.sourceLabel);
+        processRefs(def.refs, SOURCE_GEOMETRY, def.sourceLabel, def.isMain);
     });
 
-    // defaults: tag
-    defaults.tag.forEach(def => {
-        resolveRefs(def.refs, def.isMain ? main : additional, def.sourceType, def.sourceLabel);
-    });
+    // --- STEP 2: ADD TAG INHERITANCE ---
+    if (preset.tags) {
+        const targetTagCount = Object.keys(preset.tags).length;
 
-    // preset's own fields
-    resolveRefs(preset.fields || [], main, SOURCE_PRESET, SOURCE_PRESET);
-    resolveRefs(preset.moreFields || [], additional, SOURCE_PRESET, SOURCE_PRESET);
+        for (const [pId, p] of Object.entries(appData.presets)) {
+            if (pId === preset.id) continue;
+            if (!p.tags) continue;
+
+            const pTagCount = Object.keys(p.tags).length;
+            if (pTagCount >= targetTagCount) continue;
+
+            if (Object.values(p.tags).includes('*')) continue;
+
+            let match = true;
+            for (const [k, v] of Object.entries(p.tags)) {
+                if (!preset.tags[k] || preset.tags[k] !== v) {
+                    match = false;
+                    break;
+                }
+            }
+            
+            if (match && pTagCount > 0) {
+                const matchLabel = Object.entries(p.tags).map(([k,v]) => `${k}=${v}`).join(', ');
+                processRefs(p.fields, SOURCE_TAG, `tag (${matchLabel})`, true);
+                processRefs(p.moreFields, SOURCE_TAG, `tag (${matchLabel})`, false);
+            }
+        }
+    }
+
+    // --- STEP 3 & 4: ADD PRESET LOCAL FIELDS AND ITS GROUPS ---
+    processRefs(preset.fields, SOURCE_PRESET, SOURCE_PRESET, true);
+    processRefs(preset.moreFields, SOURCE_PRESET, SOURCE_PRESET, false);
+
+    // Assembly output
+    const main = [];
+    const additional = [];
+
+    for (const fg of fieldMap.values()) {
+        if (fg.isMain) main.push(fg);
+        else additional.push(fg);
+    }
 
     return { main, additional };
 }

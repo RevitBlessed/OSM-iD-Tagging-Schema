@@ -36,8 +36,8 @@ export function createFieldsSection(title, fieldGroups) {
 
             let badgeHtml = '';
 
-            if (group.originalSourceType && group.originalSourceType !== 'preset') {
-                badgeHtml = `<span class="field-badge">from ${group.originalSourceLabel}</span>`;
+            if (group.sourceType && group.sourceType !== 'preset') {
+                badgeHtml = `<span class="field-badge">from ${group.sourceLabel}</span>`;
             }
 
             card.innerHTML = `
