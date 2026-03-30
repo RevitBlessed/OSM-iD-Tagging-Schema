@@ -6,6 +6,19 @@
 
 Live demo: https://osm-id-tagging.netlify.app/
 
+## Development Workflow
+
+This project was developed using AI tools as part of the workflow.
+
+I use ChatGPT as a tool for research and planning: it helps me understand the structure of the original project, analyze relationships between entities, design the architecture, and think through the system logic.
+
+Based on this analysis, I create prompts for Antigravity, which acts as the implementation layer and generates the code. This is not a single fixed prompt — the process involves multiple iterations, refinements, and fixes.
+
+Thus, the development process is a combination of two roles:
+
+ChatGPT — as a tool for analysis, planning, and system design
+Antigravity — as a tool for code generation and implementation
+
 ## Project Overview
 
 The **OSM iD Tagging Schema Visualizer** is a standalone web application designed for OpenStreetMap contributors and developers. It provides an interactive exploration of the [openstreetmap/id-tagging-schema](https://github.com/openstreetmap/id-tagging-schema). 
