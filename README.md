@@ -17,6 +17,7 @@ Based on this analysis, I create prompts for Antigravity, which acts as the impl
 Thus, the development process is a combination of two roles:
 
 ChatGPT — as a tool for analysis, planning, and system design
+
 Antigravity — as a tool for code generation and implementation
 
 ## Project Overview
