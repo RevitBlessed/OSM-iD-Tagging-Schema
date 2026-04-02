@@ -6,6 +6,8 @@
 
 Live demo: https://osm-id-tagging.netlify.app/
 
+## Note: The live demo depends on external schema sources and may occasionally be temporarily unavailable due to rate limits. This will be addressed in further iterations by improving data fetching and caching strategies.
+
 ## Development Workflow
 
 This project was developed using AI tools as part of the workflow.
